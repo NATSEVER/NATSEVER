@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>平妹计算器（多单价详单版）</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input, button, textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+    }
+    .group {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 15px;
+      background: #fafafa;
+    }
+    .result {
+      margin-top: 20px;
+    }
+    textarea {
+      height: 250px;
+      resize: vertical;
+    }
+    .btn {
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+    }
+    .btn-add {
+      background-color: #007bff;
+      color: white;
+    }
+    .btn-add:hover {
+      background-color: #0056b3;
+    }
+    .btn-delete {
+      background-color: #dc3545;
+      color: white;
+    }
+    .btn-delete:hover {
+      background-color: #c82333;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>平妹计算器</h2>
+
+  <form id="calculator">
+    <div id="groups">
+      <div class="group">
+        <label>单价（人民币/1000点）：</label>
+        <input type="number" class="unitPrice" value="165" min="0" required>
+
+        <label>箱子数量：</label>
+        <input type="number" class="boxCount" value="100" min="0" required>
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-add" onclick="addGroup()">➕ 添加一个单价组</button>
+    <button type="button" class="btn btn-delete" onclick="deleteGroup()">➖ 删除一个单价组</button>
+
+    <label>汇率（人民币兑美元，例：7.15）：</label>
+    <input type="number" id="exchangeRate" value="7.15" step="0.01" min="0.01" required>
+
+    <button type="button" class="btn btn-add" onclick="calculate()">📊 计算</button>
+  </form>
+
+  <div class="result">
+    <label>计算详单：</label>
+    <textarea id="details" readonly></textarea>
+    <button class="btn btn-add" onclick="copyDetails()">📋 复制详单</button>
+  </div>
+</div>
+
+<script>
+  function addGroup() {
+    const group = document.createElement('div');
+    group.className = 'group';
+    group.innerHTML = `
+      <label>单价（人民币/1000点）：</label>
+      <input type="number" class="unitPrice" value="" min="0">
+
+      <label>箱子数量：</label>
+      <input type="number" class="boxCount" value="" min="0">
+    `;
+    document.getElementById('groups').appendChild(group);
+  }
+
+  function deleteGroup() {
+    const groups = document.getElementById('groups');
+    if (groups.children.length > 1) {
+      groups.removeChild(groups.lastElementChild);
+    } else {
+      alert("默认第一组不能删除！");
+    }
+  }
+
+  function calculate() {
+    const unitPrices = document.querySelectorAll('.unitPrice');
+    const boxCounts = document.querySelectorAll('.boxCount');
+    const exchangeRate = parseFloat(document.getElementById('exchangeRate').value);
+
+    if (!exchangeRate || exchangeRate <= 0) {
+      alert("请输入正确的汇率");
+      return;
+    }
+
+    let details = '';
+    let totalRMB = 0;
+    let totalUSD = 0;
+
+    for (let i = 0; i < unitPrices.length; i++) {
+      const price = parseFloat(unitPrices[i].value);
+      const count = parseFloat(boxCounts[i].value);
+
+      if (isNaN(price) || isNaN(count) || price <= 0 || count <= 0) {
+        details += `⚠️ 第 ${i + 1} 组输入不完整或非法，已跳过。\n\n`;
+        continue;
+      }
+
+      const rmb = price * 0.8 * count;
+      const usd = rmb / exchangeRate;
+
+      totalRMB += rmb;
+      totalUSD += usd;
+
+      details += `第 ${i + 1} 组：\n`;
+      details += `  单价: ¥${price} * 0.8 * ${count} = ¥${rmb.toFixed(2)}\n`;
+      details += `  美元价格: ¥${rmb.toFixed(2)} / ${exchangeRate} = $${usd.toFixed(2)}\n\n`;
+    }
+
+    details += `人民币总额: ¥${totalRMB.toFixed(2)}\n`;
+    details += `美元总额: $${totalUSD.toFixed(2)}\n`;
+
+    document.getElementById('details').value = details;
+  }
+
+  function copyDetails() {
+    const text = document.getElementById('details').value;
+    navigator.clipboard.writeText(text)
+      .then(() => alert('详单已复制到剪贴板！'))
+      .catch(() => alert('复制失败，请手动复制'));
+  }
+</script>
+
+</body>
+</html>
